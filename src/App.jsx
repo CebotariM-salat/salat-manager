@@ -95,7 +95,8 @@ function GuestReview({ waiterId }) {
     });
   };
 
-  const canSubmit = Object.values(ratings).every(value => value > 0) &&
+  const canSubmit = receiptNumber.trim().length > 0 &&
+    Object.values(ratings).every(value => value > 0) &&
     categories.every(category =>
       ratings[category.key] > 2 || (reasonSelections[category.key] || []).length > 0
     );
@@ -146,10 +147,11 @@ function GuestReview({ waiterId }) {
         </div>
 
         <label style={{ display: 'block', fontWeight: 600, margin: '18px 0 8px' }}>
-          Номер чека <span style={{ color: '#9297a5', fontWeight: 400 }}>(необязательно)</span>
+          Номер чека <span style={{ color: '#dc2626' }}>*</span>
         </label>
         <input
           type="text"
+          required
           value={receiptNumber}
           onChange={e => setReceiptNumber(e.target.value)}
           placeholder="Например, 1258"
