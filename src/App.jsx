@@ -73,6 +73,7 @@ function GuestReview({ waiterId }) {
   const [reasonSelections, setReasonSelections] = useState({});
   const [comments, setComments] = useState({});
   const [overallComment, setOverallComment] = useState('');
+  const [receiptNumber, setReceiptNumber] = useState('');
   const [activeIssue, setActiveIssue] = useState(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -103,6 +104,7 @@ function GuestReview({ waiterId }) {
     event.preventDefault();
     const review = {
       waiterId,
+      receiptNumber: receiptNumber.trim(),
       ratings,
       reasons: reasonSelections,
       issueComments: comments,
@@ -142,6 +144,18 @@ function GuestReview({ waiterId }) {
           <Users size={18} color="#9333EA" />
           <span>Официант: <strong>{waiterId || 'Не указан'}</strong></span>
         </div>
+
+        <label style={{ display: 'block', fontWeight: 600, margin: '18px 0 8px' }}>
+          Номер чека <span style={{ color: '#9297a5', fontWeight: 400 }}>(необязательно)</span>
+        </label>
+        <input
+          type="text"
+          value={receiptNumber}
+          onChange={e => setReceiptNumber(e.target.value)}
+          placeholder="Например, 1258"
+          maxLength={30}
+          style={guestStyles.textInput}
+        />
 
         {categories.map(category => (
           <section key={category.key} style={guestStyles.category}>
@@ -349,6 +363,7 @@ const guestStyles = {
   reasonGrid: { display: 'grid', gap: 10, margin: '12px 0' },
   reason: { display: 'flex', gap: 9, alignItems: 'flex-start', fontSize: 13, lineHeight: 1.4 },
   textarea: { width: '100%', boxSizing: 'border-box', border: '1px solid #e2e4eb', borderRadius: 9, padding: 12, font: 'inherit', fontSize: 14, resize: 'vertical', marginTop: 8 },
+  textInput: { width: '100%', boxSizing: 'border-box', border: '1px solid #e2e4eb', borderRadius: 9, padding: 12, font: 'inherit', fontSize: 14 },
   submit: { width: '100%', background: '#9333ea', color: '#fff', border: 0, borderRadius: 10, padding: 15, fontSize: 15, fontWeight: 700, marginTop: 20 },
   footnote: { color: '#9297a5', fontSize: 11, textAlign: 'center', marginTop: 10 }
 };
