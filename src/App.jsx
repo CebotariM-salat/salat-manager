@@ -7,6 +7,76 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+function AdminLogin({ onLogin }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setError('Неверный email или пароль. Попробуйте ещё раз.');
+      return;
+    }
+
+    onLogin();
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'grid', placeItems: 'center',
+      background: '#f6f7fb', fontFamily: 'Arial, sans-serif'
+    }}>
+      <form onSubmit={handleSubmit} style={{
+        background: '#fff', padding: 32, borderRadius: 16,
+        width: '90%', maxWidth: 380, boxSizing: 'border-box'
+      }}>
+        <h2 style={{ textAlign: 'center' }}>SALAT Manager</h2>
+        <p style={{ textAlign: 'center', color: '#9297a5' }}>
+          Вход для администратора
+        </p>
+
+        <input
+          type="email"
+          required
+          placeholder="Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          style={{ width: '100%', padding: 12, marginBottom: 12, boxSizing: 'border-box' }}
+        />
+
+        <input
+          type="password"
+          required
+          placeholder="Пароль"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          style={{ width: '100%', padding: 12, marginBottom: 12, boxSizing: 'border-box' }}
+        />
+
+        {error && <p style={{ color: '#dc2626' }}>{error}</p>}
+
+        <button type="submit" disabled={loading} style={{
+          width: '100%', padding: 13, background: '#9333ea',
+          color: '#fff', border: 0, borderRadius: 8, cursor: 'pointer'
+        }}>
+          {loading ? 'Входим...' : 'Войти'}
+        </button>
+      </form>
+    </div>
+  );
+};
 const categories = [
   {
     key: 'food',
