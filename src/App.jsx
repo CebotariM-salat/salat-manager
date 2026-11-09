@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './lib/supabase';
+import { QRCodeSVG } from 'qrcode.react';
 import {
   LayoutDashboard, Users, MessageSquare, QrCode, BarChart3,
   Settings, Bell, Star, ChevronRight, Utensils, Plus, ArrowLeft,
@@ -277,7 +278,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!isReviewPage && active === 'Официанты') loadWaiters();
+    if (!isReviewPage && (active === 'Официанты' || active === 'QR-коды')) loadWaiters();
   }, [active, isReviewPage]);
 
   const addWaiter = async (event) => {
@@ -345,6 +346,7 @@ export default function App() {
 
   return (
     <div style={styles.app}>
+      <style>{`@media print { body { background: #fff !important; } aside, header, footer, .no-print { display: none !important; } main { padding: 0 !important; } main > section { border: 0 !important; box-shadow: none !important; } ${''} }`}</style>
       <aside style={styles.sidebar}>
         <div style={styles.logo}>
           <div style={styles.logoIcon}>S</div>
@@ -425,8 +427,48 @@ export default function App() {
           <h2>{active}</h2>
           <p style={styles.muted}>Раздел подготовлен для дальнейшего подключения базы данных.</p>
           {active === 'QR-коды' && <div style={{ marginTop: 16 }}>
-            <p>После добавления официанта его персональная ссылка для отзывов будет иметь вид:</p>
-            <code>{window.location.origin}/?review=ID_ОФИЦИАНТА</code>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
+              <p style={styles.muted}>У каждого официанта своя ссылка и персональный QR-код. Гость попадёт сразу на форму отзыва.</p>
+              <button type="button" style={styles.primaryButton} onClick={() => window.print()} disabled={!waiters.length}>
+                <QrCode size={18} /> Печать всех QR-кодов
+              </button>
+            </div>
+            {waiterError && <p role="alert" style={{ color: '#dc2626', fontSize: 13 }}>{waiterError}</p>}
+            {waitersLoading ? <p style={styles.muted}>Загружаем официантов...</p> :
+              waiters.length === 0 ? <p style={styles.muted}>Сначала добавьте официантов в разделе «Официанты».</p> :
+              <div style={qrStyles.grid}>
+                {waiters.filter(waiter => waiter.active).map(waiter => {
+                  const reviewUrl = `${window.location.origin}/?review=${encodeURIComponent(waiter.code)}`;
+                  const downloadQr = () => {
+                    const svg = document.getElementById(`waiter-qr-${waiter.id}`);
+                    if (!svg) return;
+                    const source = new XMLSerializer().serializeToString(svg);
+                    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `SALAT-QR-${waiter.code}.svg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(url);
+                  };
+                  return <article key={waiter.id} style={qrStyles.card}>
+                    <strong style={{ fontSize: 16 }}>{waiter.name}</strong>
+                    <div style={qrStyles.qrWrap}>
+                      <QRCodeSVG id={`waiter-qr-${waiter.id}`} value={reviewUrl} size={176} level="H" includeMargin />
+                    </div>
+                    <span style={qrStyles.caption}>SALAT Restaurant · Оставьте отзыв</span>
+                    <code style={qrStyles.url}>{reviewUrl}</code>
+                    <div style={qrStyles.actions}>
+                      <button type="button" style={qrStyles.button} onClick={downloadQr}>Скачать QR</button>
+                      <button type="button" style={qrStyles.button} onClick={() => navigator.clipboard?.writeText(reviewUrl)}>Копировать ссылку</button>
+                    </div>
+                  </article>;
+                })}
+              </div>
+            }
+            <p style={{ ...styles.muted, marginTop: 18 }}>Для печати используйте кнопку «Печать всех QR-кодов». Неактивные официанты не отображаются.</p>
           </div>}
           {active === 'Официанты' && <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 18 }}>
@@ -485,6 +527,16 @@ export default function App() {
     </div>
   );
 }
+
+const qrStyles = {
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 16 },
+  card: { background: '#fff', border: '1px solid #e9eaf0', borderRadius: 13, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, breakInside: 'avoid' },
+  qrWrap: { padding: 10, background: '#fff', border: '1px solid #eee', borderRadius: 10, lineHeight: 0 },
+  caption: { fontSize: 11, color: '#737887', textAlign: 'center' },
+  url: { fontSize: 10, color: '#737887', overflowWrap: 'anywhere', textAlign: 'center' },
+  actions: { display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 },
+  button: { border: '1px solid #ddd', background: '#fff', borderRadius: 8, padding: '8px 10px', cursor: 'pointer', fontSize: 12 }
+};
 
 const guestStyles = {
   page: { minHeight: '100vh', background: '#f6f7fb', padding: '28px 14px', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', fontFamily: 'Arial, sans-serif', color: '#202431' },
