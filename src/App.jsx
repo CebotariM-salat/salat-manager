@@ -322,6 +322,8 @@ export default function App() {
   const isReviewPage = params.has('review');
   const waiterId = params.get('review');
   const [active, setActive] = useState('Обзор');
+  const [session, setSession] = useState(null);
+const [authLoading, setAuthLoading] = useState(true);
   const [waiters, setWaiters] = useState([]);
   const [waitersLoading, setWaitersLoading] = useState(false);
   const [waiterModalOpen, setWaiterModalOpen] = useState(false);
@@ -330,6 +332,33 @@ export default function App() {
   const [waiterError, setWaiterError] = useState('');
   const [waiterSuccess, setWaiterSuccess] = useState('');
 
+  useEffect(() => {
+  if (isReviewPage) {
+    setAuthLoading(false);
+    return;
+  }
+
+  let mounted = true;
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (mounted) {
+      setSession(session);
+      setAuthLoading(false);
+    }
+  });
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      setSession(session);
+      setAuthLoading(false);
+    }
+  );
+
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, [isReviewPage]);
   const loadWaiters = async () => {
     setWaitersLoading(true);
     setWaiterError('');
@@ -390,7 +419,19 @@ export default function App() {
   };
 
   if (isReviewPage) return <GuestReview waiterId={waiterId} />;
+if (authLoading) {
+  return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>Загрузка...</div>;
+}
 
+if (!session) {
+  return (
+    <AdminLogin
+      onLogin={() => {
+        supabase.auth.getSession().then(({ data }) => setSession(data.session));
+      }}
+    />
+  );
+}
   const navigation = [
     { name: 'Обзор', icon: LayoutDashboard },
     { name: 'Официанты', icon: Users },
