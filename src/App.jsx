@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from './lib/supabase';
 import {
   LayoutDashboard, Users, MessageSquare, QrCode, BarChart3,
   Settings, Bell, Star, ChevronRight, Utensils, Plus, ArrowLeft,
@@ -76,6 +77,8 @@ function GuestReview({ waiterId }) {
   const [receiptNumber, setReceiptNumber] = useState('');
   const [activeIssue, setActiveIssue] = useState(null);
   const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const setRating = (key, value) => {
     setRatings(prev => ({ ...prev, [key]: value }));
@@ -101,21 +104,34 @@ function GuestReview({ waiterId }) {
       ratings[category.key] > 2 || (reasonSelections[category.key] || []).length > 0
     );
 
-  const submitReview = (event) => {
+  const submitReview = async (event) => {
     event.preventDefault();
-    const review = {
-      waiterId,
-      receiptNumber: receiptNumber.trim(),
-      ratings,
-      reasons: reasonSelections,
-      issueComments: comments,
-      comment: overallComment,
-      createdAt: new Date().toISOString()
-    };
-    // Пока сохраняем отзыв в браузере для демонстрации.
-    // Следующий этап — отправка этой структуры в Supabase.
-    const existing = JSON.parse(localStorage.getItem('salat-demo-reviews') || '[]');
-    localStorage.setItem('salat-demo-reviews', JSON.stringify([...existing, review]));
+    if (saving) return;
+
+    setSaving(true);
+    setSubmitError('');
+
+    const { error } = await supabase
+      .from('reviews')
+      .insert({
+        waiter_code: waiterId,
+        receipt_number: receiptNumber.trim(),
+        food_rating: ratings.food,
+        service_rating: ratings.service,
+        atmosphere_rating: ratings.atmosphere,
+        overall_comment: overallComment.trim() || null,
+        reason_selections: reasonSelections,
+        issue_comments: comments
+      });
+
+    setSaving(false);
+
+    if (error) {
+      console.error('Supabase review insert failed:', error);
+      setSubmitError('Не удалось отправить отзыв. Попробуйте ещё раз или обратитесь к сотруднику ресторана.');
+      return;
+    }
+
     setSubmitted(true);
   };
 
@@ -212,12 +228,17 @@ function GuestReview({ waiterId }) {
           rows={4}
           style={guestStyles.textarea}
         />
-        <button type="submit" disabled={!canSubmit} style={{
+        {submitError && (
+          <p role="alert" style={{ color: '#dc2626', fontSize: 13, marginTop: 12 }}>
+            {submitError}
+          </p>
+        )}
+        <button type="submit" disabled={!canSubmit || saving} style={{
           ...guestStyles.submit,
-          opacity: canSubmit ? 1 : .5,
-          cursor: canSubmit ? 'pointer' : 'not-allowed'
+          opacity: canSubmit && !saving ? 1 : .5,
+          cursor: canSubmit && !saving ? 'pointer' : 'not-allowed'
         }}>
-          Отправить отзыв
+          {saving ? 'Отправляем...' : 'Отправить отзыв'}
         </button>
         <p style={guestStyles.footnote}>Оценки по всем трём критериям обязательны.</p>
       </form>
@@ -230,6 +251,72 @@ export default function App() {
   const isReviewPage = params.has('review');
   const waiterId = params.get('review');
   const [active, setActive] = useState('Обзор');
+  const [waiters, setWaiters] = useState([]);
+  const [waitersLoading, setWaitersLoading] = useState(false);
+  const [waiterModalOpen, setWaiterModalOpen] = useState(false);
+  const [waiterName, setWaiterName] = useState('');
+  const [waiterSaving, setWaiterSaving] = useState(false);
+  const [waiterError, setWaiterError] = useState('');
+  const [waiterSuccess, setWaiterSuccess] = useState('');
+
+  const loadWaiters = async () => {
+    setWaitersLoading(true);
+    setWaiterError('');
+    const { data, error } = await supabase
+      .from('waiters')
+      .select('id, name, code, active, created_at')
+      .order('created_at', { ascending: false });
+    setWaitersLoading(false);
+
+    if (error) {
+      console.error('Supabase waiters load failed:', error);
+      setWaiterError('Не удалось загрузить официантов. Проверьте права доступа (RLS) к таблице waiters.');
+      return;
+    }
+    setWaiters(data || []);
+  };
+
+  useEffect(() => {
+    if (!isReviewPage && active === 'Официанты') loadWaiters();
+  }, [active, isReviewPage]);
+
+  const addWaiter = async (event) => {
+    event.preventDefault();
+    const cleanName = waiterName.trim();
+    if (!cleanName || waiterSaving) return;
+
+    const code = cleanName
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '')
+      || `waiter${Date.now()}`;
+
+    setWaiterSaving(true);
+    setWaiterError('');
+    setWaiterSuccess('');
+
+    const { error } = await supabase
+      .from('waiters')
+      .insert({ name: cleanName, code, active: true });
+
+    setWaiterSaving(false);
+
+    if (error) {
+      console.error('Supabase waiter insert failed:', error);
+      setWaiterError(
+        error.code === '23505'
+          ? 'Такой код официанта уже существует. Добавьте к имени уточнение.'
+          : 'Не удалось сохранить официанта. Возможно, для таблицы waiters ещё не настроены права INSERT в RLS.'
+      );
+      return;
+    }
+
+    setWaiterName('');
+    setWaiterModalOpen(false);
+    setWaiterSuccess('Официант успешно добавлен.');
+    await loadWaiters();
+  };
 
   if (isReviewPage) return <GuestReview waiterId={waiterId} />;
 
@@ -341,7 +428,56 @@ export default function App() {
             <p>После добавления официанта его персональная ссылка для отзывов будет иметь вид:</p>
             <code>{window.location.origin}/?review=ID_ОФИЦИАНТА</code>
           </div>}
-          {active === 'Официанты' && <button style={styles.primaryButton}><Plus size={18} /> Добавить официанта</button>}
+          {active === 'Официанты' && <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 18 }}>
+              <p style={styles.muted}>Список сотрудников загружается из Supabase.</p>
+              <button type="button" style={styles.primaryButton} onClick={() => { setWaiterError(''); setWaiterSuccess(''); setWaiterModalOpen(true); }}>
+                <Plus size={18} /> Добавить официанта
+              </button>
+            </div>
+            {waiterError && <p role="alert" style={{ color: '#dc2626', fontSize: 13 }}>{waiterError}</p>}
+            {waiterSuccess && <p style={{ color: '#15803d', fontSize: 13 }}>{waiterSuccess}</p>}
+            {waitersLoading ? <p style={styles.muted}>Загружаем список...</p> :
+              waiters.length === 0 ? <p style={styles.muted}>Официантов пока нет или база не вернула записи.</p> :
+              <div style={{ overflowX: 'auto', marginTop: 18 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                  <thead><tr style={{ textAlign: 'left', borderBottom: '1px solid #eee' }}>
+                    <th style={{ padding: 10 }}>Имя</th><th style={{ padding: 10 }}>Код</th><th style={{ padding: 10 }}>Статус</th>
+                  </tr></thead>
+                  <tbody>{waiters.map(waiter => <tr key={waiter.id} style={{ borderBottom: '1px solid #f0f0f3' }}>
+                    <td style={{ padding: 10 }}>{waiter.name}</td>
+                    <td style={{ padding: 10 }}><code>{waiter.code}</code></td>
+                    <td style={{ padding: 10 }}>{waiter.active ? 'Активен' : 'Неактивен'}</td>
+                  </tr>)}</tbody>
+                </table>
+              </div>
+            }
+            {waiterModalOpen && <div role="presentation" onClick={() => !waiterSaving && setWaiterModalOpen(false)} style={{
+              position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15, 15, 25, .45)',
+              display: 'grid', placeItems: 'center', padding: 18
+            }}>
+              <form onSubmit={addWaiter} onClick={event => event.stopPropagation()} style={{
+                width: '100%', maxWidth: 420, background: '#fff', borderRadius: 14, padding: 24,
+                boxShadow: '0 15px 50px rgba(0,0,0,.18)'
+              }}>
+                <h3 style={{ marginTop: 0 }}>Новый официант</h3>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Имя и фамилия</label>
+                <input autoFocus required maxLength={100} value={waiterName}
+                  onChange={event => setWaiterName(event.target.value)}
+                  placeholder="Например, Иван Петров"
+                  style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #ddd', borderRadius: 8, padding: 12, font: 'inherit' }} />
+                {waiterError && <p role="alert" style={{ color: '#dc2626', fontSize: 12 }}>{waiterError}</p>}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+                  <button type="button" onClick={() => setWaiterModalOpen(false)} disabled={waiterSaving}
+                    style={{ padding: '10px 14px', border: '1px solid #ddd', background: '#fff', borderRadius: 8, cursor: 'pointer' }}>Отмена</button>
+                  <button type="submit" disabled={waiterSaving || !waiterName.trim()}
+                    style={{ padding: '10px 14px', border: 0, background: '#9333ea', color: '#fff', borderRadius: 8, cursor: 'pointer', opacity: waiterSaving || !waiterName.trim() ? .6 : 1 }}>
+                    {waiterSaving ? 'Сохраняем...' : 'Сохранить'}
+                  </button>
+                </div>
+              </form>
+            </div>}
+          </>}
         </section>}
 
         <footer style={styles.footer}>SALAT Manager © 2026 · Система управления рестораном</footer>
