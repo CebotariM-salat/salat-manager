@@ -494,6 +494,20 @@ if (!session) {
               <div style={styles.avatar}>A</div>
               <div><strong>Администратор</strong><div style={styles.muted}>Управление</div></div>
             </div>
+         <button
+  onClick={() => supabase.auth.signOut()}
+  style={{
+    border: '1px solid #e5e7eb',
+    background: '#ffffff',
+    color: '#64748b',
+    padding: '10px 14px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    marginLeft: '12px'
+  }}
+>
+  Выйти
+</button>
           </div>
         </header>
 
