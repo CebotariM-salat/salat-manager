@@ -378,11 +378,33 @@ const [reviewsError, setReviewsError] = useState('');
     }
     setWaiters(data || []);
   };
+const loadReviews = async () => {
+  setReviewsLoading(true);
+  setReviewsError('');
 
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  setReviewsLoading(false);
+
+  if (error) {
+    console.error('Supabase reviews load failed:', error);
+    setReviewsError('Не удалось загрузить отзывы.');
+    return;
+  }
+
+  setReviews(data || []);
+};
   useEffect(() => {
     if (!isReviewPage && (active === 'Официанты' || active === 'QR-коды')) loadWaiters();
   }, [active, isReviewPage]);
-
+useEffect(() => {
+  if (!isReviewPage && active === 'Отзывы') {
+    loadReviews();
+  }
+}, [active, isReviewPage]);
   const addWaiter = async (event) => {
     event.preventDefault();
     const cleanName = waiterName.trim();
@@ -526,11 +548,25 @@ if (!session) {
             <section style={styles.panel}>
               <div style={styles.panelHeader}><h3>Последние отзывы</h3><button style={styles.linkButton} onClick={() => setActive('Отзывы')}>Все отзывы →</button></div>
               {reviews.map((review, index) => <div style={styles.review} key={index}>
-                <div style={styles.reviewAvatar}>{review.name[0]}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={styles.reviewTop}><strong>{review.name}</strong><span style={styles.muted}>{review.date}</span></div>
-                  <div style={styles.stars}>{'★'.repeat(review.rating)}<span style={{ color: '#d1d5db' }}>{'★'.repeat(5 - review.rating)}</span></div>
-                  <p style={styles.reviewText}>{review.text}</p>
+               <div style={styles.reviewAvatar}>
+  {(review.receipt_number || '?').toString().slice(0, 1)}
+</div>
+<div style={{ flex: 1 }}>
+  <div style={styles.reviewTop}>
+    <strong>Чек №{review.receipt_number}</strong>
+    <span style={styles.muted}>
+      {new Date(review.created_at).toLocaleString('ru-RU')}
+    </span>
+  </div>
+  <div style={styles.reviewText}>
+    Еда: {review.food_rating}/5 ·
+    Сервис: {review.service_rating}/5 ·
+    Атмосфера: {review.atmosphere_rating}/5
+  </div>
+  <p style={styles.reviewText}>
+    {review.overall_comment || 'Без общего комментария'}
+  </p>
+</div>
                 </div>
               </div>)}
             </section>
