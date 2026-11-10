@@ -325,6 +325,9 @@ export default function App() {
   const [session, setSession] = useState(null);
 const [authLoading, setAuthLoading] = useState(true);
   const [waiters, setWaiters] = useState([]);
+  const [reviews, setReviews] = useState([]);
+const [reviewsLoading, setReviewsLoading] = useState(false);
+const [reviewsError, setReviewsError] = useState('');
   const [waitersLoading, setWaitersLoading] = useState(false);
   const [waiterModalOpen, setWaiterModalOpen] = useState(false);
   const [waiterName, setWaiterName] = useState('');
