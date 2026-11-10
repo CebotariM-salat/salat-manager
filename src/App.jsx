@@ -582,7 +582,43 @@ if (!session) {
 
         {active !== 'Обзор' && <section style={styles.panel}>
           <h2>{active}</h2>
-          <p style={styles.muted}>Раздел подготовлен для дальнейшего подключения базы данных.</p>
+          {active === 'Отзывы' && (
+  <div style={{ marginTop: 18 }}>
+    {reviewsLoading ? (
+      <p style={styles.muted}>Загружаем отзывы...</p>
+    ) : reviewsError ? (
+      <p style={{ color: '#dc2626' }}>{reviewsError}</p>
+    ) : reviews.length === 0 ? (
+      <p style={styles.muted}>Пока отзывов нет.</p>
+    ) : (
+      <div style={{ display: 'grid', gap: 12 }}>
+        {reviews.map((review, index) => (
+          <article
+            key={review.id || index}
+            style={{
+              padding: 16,
+              border: '1px solid #e5e7eb',
+              borderRadius: 12,
+              background: '#fff'
+            }}
+          >
+            <strong>Чек №{review.receipt_number}</strong>
+            <p style={styles.muted}>
+              {new Date(review.created_at).toLocaleString('ru-RU')}
+            </p>
+            <p>Еда: {review.food_rating}/5</p>
+            <p>Сервис: {review.service_rating}/5</p>
+            <p>Атмосфера: {review.atmosphere_rating}/5</p>
+            <p>{review.overall_comment || 'Без комментария'}</p>
+            <p style={styles.muted}>
+              Код официанта: {review.waiter_code}
+            </p>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+)}
           {active === 'QR-коды' && <div style={{ marginTop: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 18 }}>
               <p style={styles.muted}>У каждого официанта своя ссылка и персональный QR-код. Гость попадёт сразу на форму отзыва.</p>
