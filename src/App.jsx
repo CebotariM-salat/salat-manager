@@ -568,7 +568,7 @@ if (!session) {
   </p>
 </div>
                 </div>
-              </div>)}
+              )}
             </section>
             <section style={styles.panel}>
               <h3>Быстрые действия</h3>
