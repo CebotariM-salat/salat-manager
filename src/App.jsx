@@ -451,13 +451,6 @@ if (!session) {
     { title: 'Официанты', value: '18', change: 'Активны', icon: Users }
   ];
 
-  const reviews = [
-    { name: 'Александр', date: 'Сегодня, 14:32', rating: 5, text: 'Отличное обслуживание! Очень вкусная еда и приятная атмосфера.' },
-    { name: 'Мария', date: 'Сегодня, 13:15', rating: 5, text: 'Спасибо официанту за прекрасное обслуживание!' },
-    { name: 'Дмитрий', date: 'Сегодня, 12:40', rating: 4, text: 'Всё понравилось, немного долго ждали заказ.' },
-    { name: 'Елена', date: 'Вчера, 19:20', rating: 3, text: 'Еда хорошая, но обслуживание можно улучшить.' }
-  ];
-
   return (
     <div style={styles.app}>
       <style>{`@media print { body { background: #fff !important; } aside, header, footer, .no-print { display: none !important; } main { padding: 0 !important; } main > section { border: 0 !important; box-shadow: none !important; } ${''} }`}</style>
