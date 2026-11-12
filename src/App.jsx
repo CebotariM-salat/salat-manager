@@ -562,10 +562,41 @@ if (!session) {
     Еда: {review.food_rating}/5 ·
     Сервис: {review.service_rating}/5 ·
     Атмосфера: {review.atmosphere_rating}/5
-  </div>
-  <p style={styles.reviewText}>
-    {review.overall_comment || 'Без общего комментария'}
-  </p>
+  <div style={styles.reviewText}>
+  <p>{review.overall_comment || 'Без общего комментария'}</p>
+
+  {review.reason_selections &&
+    Object.keys(review.reason_selections).length > 0 && (
+      <p>
+        <strong>Причины низкой оценки:</strong>
+        {' '}
+        {Object.entries(review.reason_selections)
+          .map(([category, reasons]) => {
+            const names = {
+              food: 'Еда',
+              service: 'Сервис',
+              atmosphere: 'Атмосфера'
+            };
+
+            return `${names[category] || category}: ${
+              Array.isArray(reasons) ? reasons.join(', ') : reasons
+            }`;
+          })
+          .join(' | ')}
+      </p>
+    )}
+
+  {review.issue_comments &&
+    Object.keys(review.issue_comments).length > 0 && (
+      <p>
+        <strong>Дополнительный комментарий:</strong>
+        {' '}
+        {Object.entries(review.issue_comments)
+          .map(([category, comment]) => `${category}: ${comment}`)
+          .join(' | ')}
+      </p>
+    )}
+</div>
 </div>
                 </div>
               )}
