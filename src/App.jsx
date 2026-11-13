@@ -641,6 +641,26 @@ if (!session) {
             <p>Сервис: {review.service_rating}/5</p>
             <p>Атмосфера: {review.atmosphere_rating}/5</p>
             <p>{review.overall_comment || 'Без комментария'}</p>
+            
+{review.reason_selections &&
+  Object.keys(review.reason_selections).length > 0 && (
+    <p>
+      <strong>Причины низкой оценки:</strong>{' '}
+      {Object.entries(review.reason_selections)
+        .map(([category, reasons]) => {
+          const names = {
+            food: 'Еда',
+            service: 'Сервис',
+            atmosphere: 'Атмосфера'
+          };
+
+          return `${names[category] || category}: ${
+            Array.isArray(reasons) ? reasons.join(', ') : reasons
+          }`;
+        })
+        .join(' | ')}
+    </p>
+  )}
             <p style={styles.muted}>
               Код официанта: {review.waiter_code}
             </p>
