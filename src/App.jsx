@@ -150,7 +150,29 @@ function GuestReview({ waiterId }) {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
+const [waiterName, setWaiterName] = useState('');
 
+useEffect(() => {
+  let cancelled = false;
+
+  const loadWaiterName = async () => {
+    const { data, error } = await supabase
+      .from('waiters')
+      .select('name')
+      .eq('code', waiterId)
+      .maybeSingle();
+
+    if (!cancelled && !error) {
+      setWaiterName(data?.name || '');
+    }
+  };
+
+  if (waiterId) loadWaiterName();
+
+  return () => {
+    cancelled = true;
+  };
+}, [waiterId]);
   const setRating = (key, value) => {
     setRatings(prev => ({ ...prev, [key]: value }));
     if (value <= 3) setActiveIssue(key);
@@ -230,7 +252,7 @@ function GuestReview({ waiterId }) {
         <p style={guestStyles.muted}>Ваш отзыв поможет нам улучшить качество обслуживания.</p>
         <div style={guestStyles.waiter}>
           <Users size={18} color="#9333EA" />
-          <span>Официант: <strong>{waiterId || 'Не указан'}</strong></span>
+          <span>Официант: <strong>{waiterName || 'Загрузка...'}</strong></span>
         </div>
 
         <label style={{ display: 'block', fontWeight: 600, margin: '18px 0 8px' }}>
