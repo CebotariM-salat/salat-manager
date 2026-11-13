@@ -435,7 +435,6 @@ useEffect(() => {
   )) {
     loadReviews();
   }
-  }
 }, [active, isReviewPage]);
   const addWaiter = async (event) => {
     event.preventDefault();
