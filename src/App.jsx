@@ -420,11 +420,21 @@ const loadReviews = async () => {
   setReviews(data || []);
 };
   useEffect(() => {
-    if (!isReviewPage && (active === 'Официанты' || active === 'QR-коды')) loadWaiters();
-  }, [active, isReviewPage]);
+  if (!isReviewPage && (
+    active === 'Официанты' ||
+    active === 'QR-коды' ||
+    active === 'Аналитика'
+  )) {
+    loadWaiters();
+  }
+}, [active, isReviewPage]);
 useEffect(() => {
-  if (!isReviewPage && active === 'Отзывы') {
+  if (!isReviewPage && (
+    active === 'Отзывы' ||
+    active === 'Аналитика'
+  )) {
     loadReviews();
+  }
   }
 }, [active, isReviewPage]);
   const addWaiter = async (event) => {
