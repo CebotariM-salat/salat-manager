@@ -636,7 +636,7 @@ if (!session) {
               <h3>Быстрые действия</h3>
               <button style={styles.action} onClick={() => setActive('QR-коды')}><QrCode size={21} /><span>Создать QR-код</span><ChevronRight size={17} /></button>
               <button style={styles.action} onClick={() => setActive('Официанты')}><Users size={21} /><span>Управление официантами</span><ChevronRight size={17} /></button>
-              <button style={styles.action} onClick={() => setActive('Аналитика')}><BarChart3 size={21} /><span>Посмотреть аналитику</span><ChevronRight size={17} /></button>
+              <button style={styles.action} onClick={() => setActive('Средний рейтинг')}><BarChart3 size={21} /><span>Посмотреть аналитику</span><ChevronRight size={17} /></button>
               <div style={styles.ratingBox}><Star size={25} color="#eab308" /><div><h2>4.8 / 5.0</h2><p style={styles.muted}>Демонстрационный рейтинг</p></div></div>
             </section>
           </div>
@@ -644,6 +644,55 @@ if (!session) {
 
         {active !== 'Обзор' && <section style={styles.panel}>
           <h2>{active}</h2>
+          {active === 'Аналитика' && (
+  <section style={styles.panel}>
+    <h3>Аналитика по официантам</h3>
+
+    {waiters.length === 0 ? (
+      <p style={styles.muted}>Нет данных об официантах.</p>
+    ) : (
+      <div style={{ display: 'grid', gap: 12, marginTop: 18 }}>
+        {waiters.map((waiter) => {
+          const waiterReviews = reviews.filter(
+            (review) => review.waiter_code === waiter.code
+          );
+
+          const average = (field) => {
+            const values = waiterReviews
+              .map((review) => Number(review[field]))
+              .filter((value) => Number.isFinite(value) && value > 0);
+
+            if (values.length === 0) return '—';
+
+            return (
+              values.reduce((sum, value) => sum + value, 0) /
+              values.length
+            ).toFixed(1);
+          };
+
+          return (
+            <div
+              key={waiter.id}
+              style={{
+                padding: 16,
+                border: '1px solid #e5e7eb',
+                borderRadius: 12,
+                background: '#fff'
+              }}
+            >
+              <h3>{waiter.name}</h3>
+
+              <p>Количество отзывов: <strong>{waiterReviews.length}</strong></p>
+              <p>Средняя оценка еды: <strong>{average('food_rating')}</strong> / 5</p>
+              <p>Средняя оценка сервиса: <strong>{average('service_rating')}</strong> / 5</p>
+              <p>Средняя оценка атмосферы: <strong>{average('atmosphere_rating')}</strong> / 5</p>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </section>
+)}
           {active === 'Отзывы' && (
   <div style={{ marginTop: 18 }}>
     {reviewsLoading ? (
