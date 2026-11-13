@@ -534,7 +534,6 @@ if (!session) {
             <div><h1>Добро пожаловать в SALAT Manager!</h1><p>Здесь собрана вся информация о работе ресторана.</p></div>
             <Utensils size={48} color="#ffffff" />
           </section>
-          </>}
           <div style={styles.sectionHeader}><h3>Основные показатели</h3><span style={styles.muted}>Демонстрационные данные</span></div>
           <div style={styles.statsGrid}>
             {stats.map(stat => {
@@ -565,7 +564,7 @@ if (!session) {
     Атмосфера: {review.atmosphere_rating}/5
   <div style={styles.reviewText}>
   <p>{review.overall_comment || 'Без общего комментария'}</p>
-
+</div>
   {review.reason_selections &&
     Object.keys(review.reason_selections).length > 0 && (
       <p>
