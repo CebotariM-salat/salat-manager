@@ -153,7 +153,7 @@ function GuestReview({ waiterId }) {
 
   const setRating = (key, value) => {
     setRatings(prev => ({ ...prev, [key]: value }));
-    if (value <= 2) setActiveIssue(key);
+    if (value <= 3) setActiveIssue(key);
     else setActiveIssue(current => current === key ? null : current);
   };
 
@@ -172,7 +172,7 @@ function GuestReview({ waiterId }) {
   const canSubmit = receiptNumber.trim().length > 0 &&
     Object.values(ratings).every(value => value > 0) &&
     categories.every(category =>
-      ratings[category.key] > 2 || (reasonSelections[category.key] || []).length > 0
+      ratings[category.key] > 3 || (reasonSelections[category.key] || []).length > 0
     );
 
   const submitReview = async (event) => {
@@ -259,7 +259,7 @@ function GuestReview({ waiterId }) {
               value={ratings[category.key]}
               onChange={value => setRating(category.key, value)}
             />
-            {ratings[category.key] > 0 && ratings[category.key] <= 2 && (
+            {ratings[category.key] > 0 && ratings[category.key] <= 3 && (
               <div style={guestStyles.issueBox}>
                 <strong style={{ display: 'block', marginBottom: 5 }}>
                   Что именно не понравилось?
